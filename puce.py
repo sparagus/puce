@@ -73,7 +73,7 @@ class mainwidget(QtGui.QWidget):
         ''' Define all subwidgets which will be used '''
         self.mainfilelist = filelist()
         self.mainfilelist.setFixedWidth(607)
-        self.textdisplay = CodeEditor()
+        self.textdisplay = LineNumberedText()
         self.textdisplay.setReadOnly(True)
         self.runOriginButton = QtGui.QPushButton("Export to Origin")
         self.runButton = QtGui.QPushButton("Export to file")
@@ -484,33 +484,21 @@ class fileitem(QtGui.QListWidgetItem):
         self.delimiter_val = ","
         self.valsur_state = 0
         self.valsur_chars = '""'
-    
 class LineNumberArea(QtGui.QWidget):
-
-
     def __init__(self, editor):
         super().__init__(editor)
         self.myeditor = editor
-
-
     def sizeHint(self):
         return QtCore.Qsize(self.editor.lineNumberAreaWidth(), 0)
-
-
     def paintEvent(self, event):
         self.myeditor.lineNumberAreaPaintEvent(event)
-    
-class CodeEditor(QtGui.QPlainTextEdit):
+class LineNumberedText(QtGui.QPlainTextEdit):
     def __init__(self):
         super().__init__()
         self.lineNumberArea = LineNumberArea(self)
-
-        self.connect(self, QtCore.SIGNAL('blockCountChanged(int)'), self.updateLineNumberAreaWidth)
-        self.connect(self, QtCore.SIGNAL('updateRequest(QRect,int)'), self.updateLineNumberArea)
-
+        self.connect(self, QtCore.SIGNAL('blockCountChanged(int)'),self.updateLineNumberAreaWidth)
+        self.connect(self, QtCore.SIGNAL('updateRequest(QRect,int)'),self.updateLineNumberArea)
         self.updateLineNumberAreaWidth(0)
-
-
     def lineNumberAreaWidth(self):
         digits = 1
         count = max(1, self.blockCount())
@@ -519,51 +507,32 @@ class CodeEditor(QtGui.QPlainTextEdit):
             digits += 1
         space = 3 + self.fontMetrics().width('9') * digits
         return space
-
-
     def updateLineNumberAreaWidth(self, _):
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
-
-
     def updateLineNumberArea(self, rect, dy):
-
         if dy:
             self.lineNumberArea.scroll(0, dy)
         else:
-            self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(),
-                       rect.height())
-
+            self.lineNumberArea.update(0, rect.y(),self.lineNumberArea.width(),rect.height())
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
-
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
-
         cr = self.contentsRect();
-        self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(),
-                    self.lineNumberAreaWidth(), cr.height()))
-
-
+        self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(),cr.top(),self.lineNumberAreaWidth(),cr.height()))
     def lineNumberAreaPaintEvent(self, event):
         mypainter = QtGui.QPainter(self.lineNumberArea)
-
         mypainter.fillRect(event.rect(), QtCore.Qt.lightGray)
-
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
         bottom = top + self.blockBoundingRect(block).height()
-
-        # Just to make sure I use the right font
         height = self.fontMetrics().height()
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
                 mypainter.setPen(QtCore.Qt.black)
-                mypainter.drawText(0, top, self.lineNumberArea.width(), height,
-                 QtCore.Qt.AlignRight, number)
-
+                mypainter.drawText(0,top,self.lineNumberArea.width(),height,QtCore.Qt.AlignRight, number)
             block = block.next()
             top = bottom
             bottom = top + self.blockBoundingRect(block).height()
@@ -747,7 +716,10 @@ def findCellArea(filePath):
                 foundCellArea = line.split()[-1]
     if len(foundCellArea.split(",")) == 2:
         foundCellArea = foundCellArea.split(",")[0]+"."+foundCellArea.split(",")[1]
-    return(float(foundCellArea))
+    try:
+        return(float(foundCellArea))
+    except:
+        return(0.4)
 def createIVWorkbook(voltages,currents,curItem,measurementStage,scanResult):
     if PyOrigin.LT_execute("pe_cd /main_folder/iv_curves/") == 0: #switch to iv_curves folder in origin if it exists, if not make it (this if query will trigger an error in origin, unavoidable)
         PyOrigin.LT_execute("pe_cd /main_folder/iv_curves/")
