@@ -7,7 +7,7 @@ py_ext_path = origin_path+"/Python33/Lib/site-packages"
 if py_ext_path not in sys.path:
     sys.path.append(py_ext_path)
 from PyQt4 import QtGui, QtCore
-vernum = "0.1.0"
+vernum = "0.1.1"
 
 class mainwin(QtGui.QMainWindow):
     
@@ -347,7 +347,10 @@ class mainwidget(QtGui.QWidget):
                     curItem = self.mainfilelist.item(i)
                     evaluatedFileResults = evaluateEternalFile(0,curItem.filePath,curItem.headerLines,curItem.delimiter_state,curItem.delimiter_val,curItem.valsur_state,curItem.valsur_chars,curItem.cellarea,curItem.meastype,curItem.resisttype,curItem.colv1,curItem.coli1,curItem.colv2,curItem.coli2,curItem)
                     for idx,result in enumerate(evaluatedFileResults):
-                        outPutFile.write(str(os.path.basename(self.mainfilelist.item(i).filePath))+'\t'+str(result[4])+'\t'+str(result[-1])+'\t'+str(idx+1)+'\t'+str(result[1])+'\t'+str(result[0])+'\t'+str(result[2])+'\t'+str(result[3])+'\t'+str(result[5])+'\t'+str(result[6]/1000)+'\n')
+                        if not curItem.resisttype == 0:
+                            outPutFile.write(str(os.path.basename(self.mainfilelist.item(i).filePath))+'\t'+str(result[4])+'\t'+str(result[-1])+'\t'+str(idx+1)+'\t'+str(result[1])+'\t'+str(result[0])+'\t'+str(result[2])+'\t'+str(result[3])+'\t'+str(result[5])+'\t'+str(result[6]/1000)+'\n')
+                        else:
+                            outPutFile.write(str(os.path.basename(self.mainfilelist.item(i).filePath))+'\t'+str(result[4])+'\t'+str(result[-1])+'\t'+str(idx+1)+'\t'+str(result[1])+'\t'+str(result[0])+'\t'+str(result[2])+'\t'+str(result[3])+'\n')
             outPutFile.close()
         else:
             pass
