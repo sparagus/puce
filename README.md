@@ -1,4 +1,4 @@
-# P.U.C.E. Version 0.1.0
+# P.U.C.E. Version 0.1.1
 Python Universal Cell Evaluator - Evaluates solar cell data and automatically interacts with OriginLab
 
 This is my first larger project using Python. The motivation behind this project is to simplify the task of evaluating raw data obtained from measuring I/V curves of solar cells. Since many devices give vastly varrying output data, I hoped to create a way to easily evaluate these data files universally, hance the acronym. Since I use OriginLab to create my plots, and OriginLab has support for Python as of OriginPro 2016, I also wanted to automate the process of creating plots and displaying the evaluated data. 
