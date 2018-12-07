@@ -625,6 +625,8 @@ def evaluateEternalFile(originOrFile,filePath, headerLines, otherDelimChecked, o
 def getScanResults(voltages,currents,cellArea,curItem):
     '''Takes voltages,currents and cellArea as arguments and returns a list of scan results containing jsc,voc,fillFactor,efficiency,cellArea'''
     powers = [voltage*current for voltage,current in zip(voltages,currents)]
+    isc = 0
+    voc = 0
     for idx, voltage in enumerate(voltages):#finds the crossover point of the voltage with zero and adds some values into variables with which linear regression will be done in order to find a precise value for Isc
         if idx > 0 and ((voltage < 0 and voltages[idx-1] > 0) or (voltage > 0 and voltages[idx-1] < 0)):
             f0 = currents[idx]
@@ -639,48 +641,65 @@ def getScanResults(voltages,currents,cellArea,curItem):
             f1 = voltages[idx-1]
             x1 = currents[idx-1]
             voc = f0 + (((f1-f0)/(x1-x0))*(0-x0))
-    jsc = (isc / cellArea)*1000
-    fillFactor = (max(powers)/(isc*voc))*100 #the times 100 gives you fillfactor in percent
-    efficiency = (jsc*voc*fillFactor)/100 #because FF is already in percent the efficiency is also in percent
+    if not isc == 0 and not voc == 0:
+        jsc = (isc / cellArea)*1000
+        fillFactor = (max(powers)/(isc*voc))*100 #the times 100 gives you fillfactor in percent
+        efficiency = (jsc*voc*fillFactor)/100 #because FF is already in percent the efficiency is also in percent
+    else:
+        jsc = 0
+        fillFactor = 0
+        efficiency = 0
     if not curItem.resisttype == 0:
-        vols_ohmic_voc=[]
-        curs_ohmic_voc=[]
-        for idx, vol_rev in enumerate(voltages):
-            if (vol_rev >= voc - 0.1) and (vol_rev <= voc + 0.1):
-                vols_ohmic_voc.append(vol_rev)
-                curs_ohmic_voc.append(currents[idx])
-        avg_vols_ohmic_voc = sum(vols_ohmic_voc) / float(len(vols_ohmic_voc))
-        avg_curs_ohmic_voc = sum(curs_ohmic_voc) / float(len(curs_ohmic_voc))
-        vols_ohmic_min_avg_voc = [x - avg_vols_ohmic_voc for x in vols_ohmic_voc]
-        curs_ohmic_min_avg_voc = [x - avg_curs_ohmic_voc for x in curs_ohmic_voc]
-        vols_min_avg_times_curs_min_avg_voc = [x * y for x,y in zip(vols_ohmic_min_avg_voc,curs_ohmic_min_avg_voc)]
-        vols_ohmic_min_avg_sqr_voc = [x**2 for x in vols_ohmic_min_avg_voc]
-        curs_ohmic_min_avg_sqr_voc = [x**2 for x in curs_ohmic_min_avg_voc]
-        pearson_r_voc = sum(vols_min_avg_times_curs_min_avg_voc)/math.sqrt(sum(vols_ohmic_min_avg_sqr_voc)*sum(curs_ohmic_min_avg_sqr_voc))
-        stand_div_curs_voc = math.sqrt(sum(curs_ohmic_min_avg_sqr_voc)/(float(len(curs_ohmic_voc))-1))
-        stand_div_vols_voc = math.sqrt(sum(vols_ohmic_min_avg_sqr_voc)/(float(len(vols_ohmic_voc))-1))
-        ohm_slope_voc = pearson_r_voc * (stand_div_curs_voc/stand_div_vols_voc)
-        ohm_res_voc = -1/ohm_slope_voc
-        intercept_ohmic_voc = avg_curs_ohmic_voc - (ohm_slope_voc*avg_vols_ohmic_voc)
-        vols_ohmic_isc=[]
-        curs_ohmic_isc=[]
-        for idx, cur_rev in enumerate(currents):
-            if (cur_rev >= (isc) - 0.0005) and (cur_rev <= (isc) + 0.0005):
-                curs_ohmic_isc.append(cur_rev)
-                vols_ohmic_isc.append(voltages[idx])
-        avg_vols_ohmic_isc = sum(vols_ohmic_isc) / float(len(vols_ohmic_isc))
-        avg_curs_ohmic_isc = sum(curs_ohmic_isc) / float(len(curs_ohmic_isc))
-        vols_ohmic_min_avg_isc = [x - avg_vols_ohmic_isc for x in vols_ohmic_isc]
-        curs_ohmic_min_avg_isc = [x - avg_curs_ohmic_isc for x in curs_ohmic_isc]
-        vols_min_avg_times_curs_min_avg_isc = [x * y for x,y in zip(vols_ohmic_min_avg_isc,curs_ohmic_min_avg_isc)]
-        vols_ohmic_min_avg_sqr_isc = [x**2 for x in vols_ohmic_min_avg_isc]
-        curs_ohmic_min_avg_sqr_isc = [x**2 for x in curs_ohmic_min_avg_isc]
-        pearson_r_isc = sum(vols_min_avg_times_curs_min_avg_isc)/math.sqrt(sum(vols_ohmic_min_avg_sqr_isc)*sum(curs_ohmic_min_avg_sqr_isc))
-        stand_div_curs_isc = math.sqrt(sum(curs_ohmic_min_avg_sqr_isc)/(float(len(curs_ohmic_isc))-1))
-        stand_div_vols_isc = math.sqrt(sum(vols_ohmic_min_avg_sqr_isc)/(float(len(vols_ohmic_isc))-1))
-        ohm_slope_isc = pearson_r_isc * (stand_div_curs_isc/stand_div_vols_isc)
-        ohm_res_isc = -1/ohm_slope_isc
-        intercept_ohmic_isc = avg_curs_ohmic_isc - (ohm_slope_isc*avg_vols_ohmic_isc)
+        if not voc == 0:
+            vols_ohmic_voc=[]
+            curs_ohmic_voc=[]
+            for idx, vol_rev in enumerate(voltages):
+                if (vol_rev >= voc - 0.1) and (vol_rev <= voc + 0.1):
+                    vols_ohmic_voc.append(vol_rev)
+                    curs_ohmic_voc.append(currents[idx])
+            avg_vols_ohmic_voc = sum(vols_ohmic_voc) / float(len(vols_ohmic_voc))
+            avg_curs_ohmic_voc = sum(curs_ohmic_voc) / float(len(curs_ohmic_voc))
+            vols_ohmic_min_avg_voc = [x - avg_vols_ohmic_voc for x in vols_ohmic_voc]
+            curs_ohmic_min_avg_voc = [x - avg_curs_ohmic_voc for x in curs_ohmic_voc]
+            vols_min_avg_times_curs_min_avg_voc = [x * y for x,y in zip(vols_ohmic_min_avg_voc,curs_ohmic_min_avg_voc)]
+            vols_ohmic_min_avg_sqr_voc = [x**2 for x in vols_ohmic_min_avg_voc]
+            curs_ohmic_min_avg_sqr_voc = [x**2 for x in curs_ohmic_min_avg_voc]
+            pearson_r_voc = sum(vols_min_avg_times_curs_min_avg_voc)/math.sqrt(sum(vols_ohmic_min_avg_sqr_voc)*sum(curs_ohmic_min_avg_sqr_voc))
+            stand_div_curs_voc = math.sqrt(sum(curs_ohmic_min_avg_sqr_voc)/(float(len(curs_ohmic_voc))-1))
+            stand_div_vols_voc = math.sqrt(sum(vols_ohmic_min_avg_sqr_voc)/(float(len(vols_ohmic_voc))-1))
+            ohm_slope_voc = pearson_r_voc * (stand_div_curs_voc/stand_div_vols_voc)
+            ohm_res_voc = -1/ohm_slope_voc
+            intercept_ohmic_voc = avg_curs_ohmic_voc - (ohm_slope_voc*avg_vols_ohmic_voc)
+        else:
+            vols_ohmic_voc = []
+            intercept_ohmic_voc = 0
+            ohm_slope_voc = 0
+            ohm_res_voc = 0
+        if not isc == 0:
+            vols_ohmic_isc=[]
+            curs_ohmic_isc=[]
+            for idx, cur_rev in enumerate(currents):
+                if (cur_rev >= (isc) - 0.0005) and (cur_rev <= (isc) + 0.0005):
+                    curs_ohmic_isc.append(cur_rev)
+                    vols_ohmic_isc.append(voltages[idx])
+            avg_vols_ohmic_isc = sum(vols_ohmic_isc) / float(len(vols_ohmic_isc))
+            avg_curs_ohmic_isc = sum(curs_ohmic_isc) / float(len(curs_ohmic_isc))
+            vols_ohmic_min_avg_isc = [x - avg_vols_ohmic_isc for x in vols_ohmic_isc]
+            curs_ohmic_min_avg_isc = [x - avg_curs_ohmic_isc for x in curs_ohmic_isc]
+            vols_min_avg_times_curs_min_avg_isc = [x * y for x,y in zip(vols_ohmic_min_avg_isc,curs_ohmic_min_avg_isc)]
+            vols_ohmic_min_avg_sqr_isc = [x**2 for x in vols_ohmic_min_avg_isc]
+            curs_ohmic_min_avg_sqr_isc = [x**2 for x in curs_ohmic_min_avg_isc]
+            pearson_r_isc = sum(vols_min_avg_times_curs_min_avg_isc)/math.sqrt(sum(vols_ohmic_min_avg_sqr_isc)*sum(curs_ohmic_min_avg_sqr_isc))
+            stand_div_curs_isc = math.sqrt(sum(curs_ohmic_min_avg_sqr_isc)/(float(len(curs_ohmic_isc))-1))
+            stand_div_vols_isc = math.sqrt(sum(vols_ohmic_min_avg_sqr_isc)/(float(len(vols_ohmic_isc))-1))
+            ohm_slope_isc = pearson_r_isc * (stand_div_curs_isc/stand_div_vols_isc)
+            ohm_res_isc = -1/ohm_slope_isc
+            intercept_ohmic_isc = avg_curs_ohmic_isc - (ohm_slope_isc*avg_vols_ohmic_isc)
+        else:
+            vols_ohmic_isc = []
+            intercept_ohmic_isc = 0
+            ohm_slope_isc = 0
+            ohm_res_isc = 0
     if not curItem.resisttype == 0:
         return([jsc,voc,fillFactor,efficiency,cellArea,ohm_res_voc,ohm_res_isc,ohm_slope_voc,intercept_ohmic_voc,vols_ohmic_voc,vols_ohmic_isc,ohm_slope_isc,intercept_ohmic_isc])
     else:
