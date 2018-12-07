@@ -7,7 +7,7 @@ py_ext_path = origin_path+"/Python33/Lib/site-packages"
 if py_ext_path not in sys.path:
     sys.path.append(py_ext_path)
 from PyQt4 import QtGui, QtCore
-vernum = "0.1.1"
+vernum = "0.1.2"
 
 class mainwin(QtGui.QMainWindow):
     
